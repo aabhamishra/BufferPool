@@ -38,9 +38,14 @@ BufMgr::BufMgr(std::uint32_t bufs)
   clockHand = bufs - 1;
 }
 
-void BufMgr::advanceClock() {}
 
-void BufMgr::allocBuf(FrameId& frame) {}
+void BufMgr::advanceClock() {
+  clockHand = (clockHand + 1)%numBufs;
+}
+
+void BufMgr::allocBuf(FrameId& frame) {
+
+}
 
 void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {}
 
@@ -50,7 +55,18 @@ void BufMgr::allocPage(File& file, PageId& pageNo, Page*& page) {}
 
 void BufMgr::flushFile(File& file) {}
 
-void BufMgr::disposePage(File& file, const PageId PageNo) {}
+void BufMgr::disposePage(File& file, const PageId PageNo) { 
+    FrameId toDispose;
+    try{
+        hashTable->lookup(file, PageNo, toDispose);
+        bufDescTable[toDispose].Clear();
+        hashTable->remove(file, PageNo);
+    }
+    catch(HashNotFoundException e){
+    }
+    //delete page from the file
+    file->deletePage(PageNo);
+}
 
 void BufMgr::printSelf(void) {
   int validFrames = 0;
