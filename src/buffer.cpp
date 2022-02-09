@@ -58,14 +58,15 @@ void BufMgr::flushFile(File& file) {}
 void BufMgr::disposePage(File& file, const PageId PageNo) { 
     FrameId toDispose;
     try{
-        hashTable->lookup(file, PageNo, toDispose);
-        bufDescTable[toDispose].Clear();
-        hashTable->remove(file, PageNo);
+        hashTable.lookup(file, PageNo, toDispose);
+        hashTable.lookup(file, PageNo, toDispose);
+        bufDescTable[toDispose].clear();
+        hashTable.remove(file, PageNo);
     }
     catch(HashNotFoundException e){
     }
     //delete page from the file
-    file->deletePage(PageNo);
+    file.deletePage(PageNo);
 }
 
 void BufMgr::printSelf(void) {
