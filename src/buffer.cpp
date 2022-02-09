@@ -59,7 +59,6 @@ void BufMgr::disposePage(File& file, const PageId PageNo) {
     FrameId toDispose;
     try{
         hashTable.lookup(file, PageNo, toDispose);
-        hashTable.lookup(file, PageNo, toDispose);
         bufDescTable[toDispose].clear();
         hashTable.remove(file, PageNo);
     }
