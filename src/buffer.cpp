@@ -47,7 +47,6 @@ void BufMgr::allocBuf(FrameId& frame) {
   // if necessary, writing a dirty page back to disk
   // Throws BufferExceededException if all buffer frames are pinned. 
   // If the buffer frame allocated had a valid page in it, you remove the appropriate entry from the hash table.
-  // 
 }
 
 // TODO Confused about return statements????
@@ -92,7 +91,14 @@ void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
   }
 }
 
-void BufMgr::allocPage(File& file, PageId& pageNo, Page*& page) {}
+// TODO Check if exception handling is needed
+void BufMgr::allocPage(File& file, PageId& pageNo, Page*& page) {
+  FrameId frameNo;
+  *page = file.allocatePage();
+  allocBuf(frameNo);
+  hashTable.insert(file, pageNo, frameNo);
+  bufDescTable[frameNo].Set(file, pageNo);
+}
 
 void BufMgr::flushFile(File& file) {
   //loop through to find frame with file
