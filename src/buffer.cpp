@@ -42,19 +42,24 @@ void BufMgr::advanceClock() {
   clockHand = (clockHand + 1)%numBufs;
 }
 
-void BufMgr::allocBuf(FrameId& frame) {}
+void BufMgr::allocBuf(FrameId& frame) {
+
+}
 
 void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {}
 
 void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
-  //define a frameID where page would be located 
+  // Define a frameID where page could be located 
   FrameId pageFrame;
   try{
+    // Search for page in buffer pool
     hashTable.lookup(file, pageNo, pageFrame);
+
+    // If pin count is 0, throw exception,
     if (bufDescTable[pageFrame].pinCnt == 0)
     {
-      throw PageNotPinnedException("page not pinned", pageNo, pageFrame);
-    }
+      throw PageNotPinnedException("Page not pinned.", pageNo, pageFrame);
+    } // else decrement pin count and set dirty bit if needed.
     else{
       bufDescTable[pageFrame].pinCnt--;
       if (dirty == true)
@@ -62,10 +67,8 @@ void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
         bufDescTable[pageFrame].dirty = true;
       }
     }
-  }
-  catch (HashNotFoundException &e)
-  {
-    //if page is not found in any frame, throw exception
+  } // if page is not found in any frame, throw exception
+  catch (HashNotFoundException &e){
     std::cerr << "HashNotFoundException in unpinPage()" << "\n";
   }
 }
@@ -84,13 +87,13 @@ void BufMgr::flushFile(File& file) {
       {
         throw BadBufferException(i, bufDescTable[i].dirty, bufDescTable[i].valid, bufDescTable[i].refbit);
       }
-      //if page is not pinned, throw exception
+      //if page is pinned, throw exception
       if (bufDescTable[i].pinCnt != 0)
       {
         throw PagePinnedException(file.filename(), bufDescTable[i].pageNo, i);
       }
       //when found, if page is dirty, write to disk and update dirty bit
-      if (bufDescTable[i].dirty != 0)
+      if (bufDescTable[i].dirty == 0)
       {
         bufDescTable[i].file.writePage(bufPool[i]);
         bufDescTable[i].dirty = 0;
@@ -104,6 +107,7 @@ void BufMgr::flushFile(File& file) {
 
 void BufMgr::disposePage(File& file, const PageId PageNo) { 
     FrameId toDispose;
+
     try{
         hashTable.lookup(file, PageNo, toDispose);
         bufDescTable[toDispose].clear();
