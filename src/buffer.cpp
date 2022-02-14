@@ -43,10 +43,29 @@ void BufMgr::advanceClock() {
 }
 
 void BufMgr::allocBuf(FrameId& frame) {
-
+  // Allocates a free frame using the clock algorithm; 
+  // if necessary, writing a dirty page back to disk
+  // Throws BufferExceededException if all buffer frames are pinned. 
+  // If the buffer frame allocated had a valid page in it, you remove the appropriate entry from the hash table.
+  // 
 }
 
-void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {}
+// TODO Confused about return statements????
+void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {
+  FrameId frameNo;
+  try {
+    hashTable.lookup(file, pageNo, frameNo);
+    bufDescTable[frameNo].refbit = true;
+    bufDescTable[frameNo].pinCnt++;
+
+  } // if page is not found in buffer pool, catch exception
+  catch (HashNotFoundException &e){
+    allocBuf(frameNo);
+    *page = file.readPage(pageNo);
+    hashTable.insert(file, pageNo, frameNo);
+    bufDescTable[frameNo].Set(file, pageNo);
+  }
+}
 
 void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
   // Define a frameID where page could be located 
@@ -67,7 +86,7 @@ void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
         bufDescTable[pageFrame].dirty = true;
       }
     }
-  } // if page is not found in any frame, throw exception
+  } // if page is not found in any frame, catch exception
   catch (HashNotFoundException &e){
     std::cerr << "HashNotFoundException in unpinPage()" << "\n";
   }
@@ -113,8 +132,8 @@ void BufMgr::disposePage(File& file, const PageId PageNo) {
         bufDescTable[toDispose].clear();
         hashTable.remove(file, PageNo);
     }
-    catch(HashNotFoundException &e){
-    }
+    catch(HashNotFoundException &e){}
+
     //delete page from the file
     file.deletePage(PageNo);
 }
