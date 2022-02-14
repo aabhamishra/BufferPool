@@ -49,11 +49,61 @@ void BufMgr::allocBuf(FrameId& frame) {
 
 void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {}
 
-void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {}
+void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
+  //define a frameID where page would be located 
+  FrameId pageFrame;
+  try{
+    hashTable.lookup(file, pageNo, pageFrame);
+    if (bufDescTable[pageFrame].pinCnt == 0)
+    {
+      throw PageNotPinnedException("page not pinned", pageNo, pageFrame);
+    }
+    else{
+      bufDescTable[pageFrame].pinCnt--;
+      if (dirty == true)
+      {
+        bufDescTable[pageFrame].dirty = true;
+      }
+    }
+  }
+  catch (HashNotFoundException e)
+  {
+    //if page is not found in any frame, throw exception
+    std::cerr << "HashNotFoundException in unpinPage()" << "\n";
+  }
+}
 
 void BufMgr::allocPage(File& file, PageId& pageNo, Page*& page) {}
 
-void BufMgr::flushFile(File& file) {}
+void BufMgr::flushFile(File& file) {
+  //loop through to find frame with file
+  for (FrameId i = 0; i < numBufs; i++)
+  {
+    //when file is found, check for exceptions
+    if (bufDescTable[i].file == file)
+    {
+      //if frame allocated is invalid, throw an exception
+      if (bufDescTable[i].valid == 0)
+      {
+        throw BadBufferException(i, bufDescTable[i].dirty, bufDescTable[i].valid, bufDescTable[i].refbit);
+      }
+      //if page is not pinned, throw exception
+      if (bufDescTable[i].pinCnt != 0)
+      {
+        throw PagePinnedException(file.filename(), bufDescTable[i].pageNo, i);
+      }
+      //when found, if page is dirty, write to disk and update dirty bit
+      if (bufDescTable[i].dirty != 0)
+      {
+        bufDescTable[i].file.writePage(bufPool[i]);
+        bufDescTable[i].dirty = 0;
+      }
+      //remove page from bufferpool
+      hashTable.remove(file, bufDescTable[i].pageNo);
+      bufDescTable[i].clear();
+    }
+  }
+}
 
 void BufMgr::disposePage(File& file, const PageId PageNo) { 
     FrameId toDispose;
