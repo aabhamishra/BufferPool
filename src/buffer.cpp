@@ -38,14 +38,11 @@ BufMgr::BufMgr(std::uint32_t bufs)
   clockHand = bufs - 1;
 }
 
-
 void BufMgr::advanceClock() {
   clockHand = (clockHand + 1)%numBufs;
 }
 
-void BufMgr::allocBuf(FrameId& frame) {
-
-}
+void BufMgr::allocBuf(FrameId& frame) {}
 
 void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {}
 
@@ -66,7 +63,7 @@ void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
       }
     }
   }
-  catch (HashNotFoundException e)
+  catch (HashNotFoundException &e)
   {
     //if page is not found in any frame, throw exception
     std::cerr << "HashNotFoundException in unpinPage()" << "\n";
@@ -112,7 +109,7 @@ void BufMgr::disposePage(File& file, const PageId PageNo) {
         bufDescTable[toDispose].clear();
         hashTable.remove(file, PageNo);
     }
-    catch(HashNotFoundException e){
+    catch(HashNotFoundException &e){
     }
     //delete page from the file
     file.deletePage(PageNo);

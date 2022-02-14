@@ -187,7 +187,7 @@ void test2(File &file1, File &file2, File &file3) {
     sprintf(tmpbuf, "test.2 Page %u %7.1f", pageno2, (float)pageno2);
     rid2 = page2->insertRecord(tmpbuf);
 
-    long int index = random() % num;
+    long int index = rand() % num;
     pageno1 = pid[index];
     bufMgr->readPage(file1, pageno1, page);
     sprintf(tmpbuf, "test.1 Page %u %7.1f", pageno1, (float)pageno1);
