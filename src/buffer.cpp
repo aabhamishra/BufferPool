@@ -89,13 +89,6 @@ void BufMgr::allocBuf(FrameId& frame) {
   throw BufferExceededException(); // throw exception if all the pages are pinned
 }
 
-=======
-  // Allocates a free frame using the clock algorithm; 
-  // if necessary, writing a dirty page back to disk
-  // Throws BufferExceededException if all buffer frames are pinned. 
-  // If the buffer frame allocated had a valid page in it, you remove the appropriate entry from the hash table.
->>>>>>> main
-}
 
 // TODO Confused about return statements????
 void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {
