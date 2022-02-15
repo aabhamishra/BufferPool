@@ -43,7 +43,54 @@ void BufMgr::advanceClock() {
   clockHand = (clockHand + 1)%numBufs;
 }
 
+/**
+ * @brief Uses the clock algorithm to allocate a free frame
+ * @param frame frame reference number 
+ * @throws BufferExceededExcpetion if all buffer frames are pinned.
+ */ 
 void BufMgr::allocBuf(FrameId& frame) {
+<<<<<<< Updated upstream
+=======
+  
+  unsigned int count = 0; // keeps track of the total pages pinned
+
+  // use the clock algorithm
+  while(count <= numBufs){ // while the total number of frames have not exceeded
+    advanceClock();
+    if (!bufDescTable[clockHand].valid){ // allocate a frame if not valid
+      frame = bufDescTable[clockHand].frameNo;
+      return;
+    }
+    else if(bufDescTable[clockHand].valid){ // if valid
+      if(bufDescTable[clockHand].refbit){
+        bufDescTable[clockHand].refbit = false; 
+        advanceClock();
+      }
+      else if(!bufDescTable[clockHand].refbit){
+        if (bufDescTable[clockHand].pinCnt != 0){
+          count++;
+          advanceClock();
+        }
+        // make sure frame has not been pinned
+          // if the frame has not been edited
+        else if (bufDescTable[clockHand].pinCnt == 0 && !bufDescTable[clockHand].dirty){ 
+          hashTable.remove(bufDescTable[clockHand].file, bufDescTable[clockHand].pageNo);
+          // allocate the frame
+          frame = bufDescTable[clockHand].frameNo;
+          return;
+        }
+        else if(bufDescTable[clockHand].pinCnt == 0 && bufDescTable[clockHand].dirty){
+          // or else write the page back to the disk 
+          flushFile(bufDescTable[clockHand].file);
+          frame = bufDescTable[clockHand].frameNo;
+          return;
+        }
+      }
+    }
+  }
+  throw BufferExceededException(); // throw exception if all the pages are pinned
+}
+>>>>>>> Stashed changes
 
 }
 
