@@ -38,7 +38,6 @@ BufMgr::BufMgr(std::uint32_t bufs)
   clockHand = bufs - 1;
 }
 
-
 void BufMgr::advanceClock() {
   clockHand = (clockHand + 1)%numBufs;
 }
@@ -49,6 +48,7 @@ void BufMgr::advanceClock() {
  * @throws BufferExceededExcpetion if all buffer frames are pinned.
  */ 
 void BufMgr::allocBuf(FrameId& frame) {
+<<<<<<< HEAD
   
   unsigned int count = 0; // keeps track of the total pages pinned
 
@@ -89,27 +89,107 @@ void BufMgr::allocBuf(FrameId& frame) {
   throw BufferExceededException(); // throw exception if all the pages are pinned
 }
 
+=======
+  // Allocates a free frame using the clock algorithm; 
+  // if necessary, writing a dirty page back to disk
+  // Throws BufferExceededException if all buffer frames are pinned. 
+  // If the buffer frame allocated had a valid page in it, you remove the appropriate entry from the hash table.
+>>>>>>> main
 }
 
-void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {}
+// TODO Confused about return statements????
+void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {
+  FrameId frameNo;
+  try {
+    hashTable.lookup(file, pageNo, frameNo);
+    bufDescTable[frameNo].refbit = true;
+    bufDescTable[frameNo].pinCnt++;
 
-void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {}
+  } // if page is not found in buffer pool, catch exception
+  catch (HashNotFoundException &e){
+    allocBuf(frameNo);
+    *page = file.readPage(pageNo);
+    hashTable.insert(file, pageNo, frameNo);
+    bufDescTable[frameNo].Set(file, pageNo);
+  }
+}
 
-void BufMgr::allocPage(File& file, PageId& pageNo, Page*& page) {}
+void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
+  // Define a frameID where page could be located 
+  FrameId pageFrame;
+  try{
+    // Search for page in buffer pool
+    hashTable.lookup(file, pageNo, pageFrame);
 
-void BufMgr::flushFile(File& file) {}
+    // If pin count is 0, throw exception,
+    if (bufDescTable[pageFrame].pinCnt == 0)
+    {
+      throw PageNotPinnedException("Page not pinned.", pageNo, pageFrame);
+    } // else decrement pin count and set dirty bit if needed.
+    else{
+      bufDescTable[pageFrame].pinCnt--;
+      if (dirty == true)
+      {
+        bufDescTable[pageFrame].dirty = true;
+      }
+    }
+  } // if page is not found in any frame, catch exception
+  catch (HashNotFoundException &e){
+    std::cerr << "HashNotFoundException in unpinPage()" << "\n";
+  }
+}
+
+// TODO Check if exception handling is needed
+void BufMgr::allocPage(File& file, PageId& pageNo, Page*& page) {
+  FrameId frameNo;
+  *page = file.allocatePage();
+  allocBuf(frameNo);
+  hashTable.insert(file, pageNo, frameNo);
+  bufDescTable[frameNo].Set(file, pageNo);
+}
+
+void BufMgr::flushFile(File& file) {
+  //loop through to find frame with file
+  for (FrameId i = 0; i < numBufs; i++)
+  {
+    //when file is found, check for exceptions
+    if (bufDescTable[i].file == file)
+    {
+      //if frame allocated is invalid, throw an exception
+      if (bufDescTable[i].valid == 0)
+      {
+        throw BadBufferException(i, bufDescTable[i].dirty, bufDescTable[i].valid, bufDescTable[i].refbit);
+      }
+      //if page is pinned, throw exception
+      if (bufDescTable[i].pinCnt != 0)
+      {
+        throw PagePinnedException(file.filename(), bufDescTable[i].pageNo, i);
+      }
+      //when found, if page is dirty, write to disk and update dirty bit
+      if (bufDescTable[i].dirty == 0)
+      {
+        bufDescTable[i].file.writePage(bufPool[i]);
+        bufDescTable[i].dirty = 0;
+      }
+      //remove page from bufferpool
+      hashTable.remove(file, bufDescTable[i].pageNo);
+      bufDescTable[i].clear();
+    }
+  }
+}
 
 void BufMgr::disposePage(File& file, const PageId PageNo) { 
     FrameId toDispose;
+
     try{
-        hashTable->lookup(file, PageNo, toDispose);
-        bufDescTable[toDispose].Clear();
-        hashTable->remove(file, PageNo);
+        hashTable.lookup(file, PageNo, toDispose);
+        bufDescTable[toDispose].clear();
+        hashTable.remove(file, PageNo);
     }
-    catch(HashNotFoundException e){
-    }
+    catch(HashNotFoundException &e){}
+
     //delete page from the file
-    file->deletePage(PageNo);
+    file.deletePage(PageNo);
 }
 
 void BufMgr::printSelf(void) {
