@@ -48,7 +48,6 @@ void BufMgr::advanceClock() {
  * @throws BufferExceededExcpetion if all buffer frames are pinned.
  */ 
 void BufMgr::allocBuf(FrameId& frame) {
-<<<<<<< HEAD
   
   unsigned int count = 0; // keeps track of the total pages pinned
 
