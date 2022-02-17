@@ -58,7 +58,7 @@ void BufMgr::allocBuf(FrameId& frame) {
       return;
     }
     else if (bufDescTable[clockHand].refbit){
-      bufDescTable[clockHand].refbit == false;
+      bufDescTable[clockHand].refbit = false;
       continue;
     }
     else if (bufDescTable[clockHand].pinCnt == 0){
@@ -81,6 +81,8 @@ void BufMgr::allocBuf(FrameId& frame) {
 
   hashTable.remove(bufDescTable[clockHand].file, bufDescTable[clockHand].pageNo);
   bufDescTable[clockHand].clear();
+  
+  
 }
 
 
@@ -128,14 +130,17 @@ void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
   }
 }
 
-// TODO Check if exception handling is needed
 void BufMgr::allocPage(File& file, PageId& pageNo, Page*& page) {
   FrameId frameNo;
   try {  
+    // bufDescTable[frameNo].Set(file, pageNo);
+    // Page temp = file.allocatePage();
+    // page = &(bufPool[frameNo]);
+    // *page = temp;
     allocBuf(frameNo);
-    Page temp = file.allocatePage();
-    page = &(bufPool[frameNo]);
-    *page = temp;
+    bufPool[frameNo] = file.allocatePage();
+    page = &bufPool[frameNo];
+    pageNo = page->page_number();
     hashTable.insert(file, pageNo, frameNo);
     bufDescTable[frameNo].Set(file, pageNo);
   }
