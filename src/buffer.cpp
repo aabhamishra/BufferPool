@@ -132,22 +132,13 @@ void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
 
 void BufMgr::allocPage(File& file, PageId& pageNo, Page*& page) {
   FrameId frameNo;
-  try {  
-    // bufDescTable[frameNo].Set(file, pageNo);
-    // Page temp = file.allocatePage();
-    // page = &(bufPool[frameNo]);
-    // *page = temp;
-    allocBuf(frameNo);
-    bufPool[frameNo] = file.allocatePage();
-    page = &bufPool[frameNo];
-    pageNo = page->page_number();
-    hashTable.insert(file, pageNo, frameNo);
-    bufDescTable[frameNo].Set(file, pageNo);
-  }
-  catch(BadgerDbException& e){
-    std::cerr << e.message();
-    throw e;
-  }  
+  Page temp = file.allocatePage();
+  allocBuf(frameNo);
+  bufPool[frameNo] = temp;
+  page = &bufPool[frameNo];
+  pageNo = temp.page_number();
+  hashTable.insert(file, pageNo, frameNo);
+  bufDescTable[frameNo].Set(file, pageNo);
 }
 
 void BufMgr::flushFile(File& file) {
