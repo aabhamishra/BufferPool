@@ -105,9 +105,6 @@ void testBufMgr() {
   // Create buffer manager
   bufMgr = std::make_shared<BufMgr>(num);
 
-  // DELETE
-  std::cout<<"entered testBufMgr, after shared pointer\n\n";
-
 
   // Create dummy files
   const std::string filename1 = "test.1";
@@ -126,9 +123,6 @@ void testBufMgr() {
   } catch (const FileNotFoundException &e) {
   }
 
-  // DELETE
-  std::cout<<"After cleanup of prev files\n\n";
-
 
   {
     File file1 = File::create(filename1);
@@ -142,8 +136,6 @@ void testBufMgr() {
     // their preceding tests. So, they have to be run in the following order.
     // Commenting  a particular test requires commenting all tests that follow
     // it else those tests would fail.
-    // DELETE
-    std::cout<<"Entering test 1\n\n";
     test1(file1);
     test2(file1, file2, file3);
     test3(file4);
@@ -192,6 +184,7 @@ void test1(File &file1) {
     }
     bufMgr->unPinPage(file1, pid[i], false);
   }
+
   std::cout << "Test 1 passed"
             << "\n";
 }
@@ -200,6 +193,7 @@ void test2(File &file1, File &file2, File &file3) {
   // Writing and reading back multiple files
   // The page number and the value should match
 
+  std::cout<<"Entering for loop\n\n";
   for (i = 0; i < num / 3; i++) {
     bufMgr->allocPage(file2, pageno2, page2);
     sprintf(tmpbuf, "test.2 Page %u %7.1f", pageno2, (float)pageno2);
@@ -232,6 +226,7 @@ void test2(File &file1, File &file2, File &file3) {
 
     bufMgr->unPinPage(file1, pageno1, false);
   }
+  std::cout<<"Exiting for loop\n\n";
 
   for (i = 0; i < num / 3; i++) {
     bufMgr->unPinPage(file2, i + 1, true);

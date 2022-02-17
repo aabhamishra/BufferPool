@@ -51,7 +51,7 @@ void BufMgr::allocBuf(FrameId& frame) {
   
   unsigned int count = 0;
 
-  while(count <= numBufs){
+  while(count < numBufs){
     advanceClock();
     if(!bufDescTable[clockHand].valid){
       frame = bufDescTable[clockHand].frameNo;
@@ -63,13 +63,11 @@ void BufMgr::allocBuf(FrameId& frame) {
     }
     else if (bufDescTable[clockHand].pinCnt == 0){
       break;
-    }
-    else{
+    }else{
       count++;
     }
   }
-
-  if(count > numBufs){
+  if(count >= numBufs){
     throw BufferExceededException();
   }
   //write to disk if the frame is dirty
@@ -83,64 +81,25 @@ void BufMgr::allocBuf(FrameId& frame) {
 
   hashTable.remove(bufDescTable[clockHand].file, bufDescTable[clockHand].pageNo);
   bufDescTable[clockHand].clear();
-  }
-  
-  /**
-  unsigned int count = 0; // keeps track of the total pages pinned
-
-  // use the clock algorithm
-  while(count <= numBufs){ // while the total number of frames have not exceeded
-    advanceClock();
-    if (!bufDescTable[clockHand].valid){ // allocate a frame if not valid
-      frame = bufDescTable[clockHand].frameNo;
-      return;
-    }
-    else if(bufDescTable[clockHand].valid){ // if valid
-      if(bufDescTable[clockHand].refbit){
-        bufDescTable[clockHand].refbit = false; 
-        advanceClock();
-      }
-      else if(!bufDescTable[clockHand].refbit){
-        if (bufDescTable[clockHand].pinCnt != 0){
-          count++;
-          advanceClock();
-        }
-        // make sure frame has not been pinned
-        // if the frame has not been edited
-        else if (bufDescTable[clockHand].pinCnt == 0 && !bufDescTable[clockHand].dirty){ 
-          hashTable.remove(bufDescTable[clockHand].file, bufDescTable[clockHand].pageNo);
-          // allocate the frame
-          frame = bufDescTable[clockHand].frameNo;
-          return;
-        }
-        else if(bufDescTable[clockHand].pinCnt == 0 && bufDescTable[clockHand].dirty){
-          // or else write the page back to the disk 
-          flushFile(bufDescTable[clockHand].file);
-          frame = bufDescTable[clockHand].frameNo;
-          return;
-        }
-      }
-      */
-    }
-  }
-  throw BufferExceededException(); // throw exception if all the pages are pinned
 }
 
 
-// TODO Confused about return statements????
 void BufMgr::readPage(File& file, const PageId pageNo, Page*& page) {
   FrameId frameNo;
   try {
     hashTable.lookup(file, pageNo, frameNo);
     bufDescTable[frameNo].refbit = true;
     bufDescTable[frameNo].pinCnt++;
+    page = &bufPool[frameNo];
 
   } // if page is not found in buffer pool, catch exception
   catch (HashNotFoundException &e){
     allocBuf(frameNo);
-    *page = file.readPage(pageNo);
-    hashTable.insert(file, pageNo, frameNo);
-    bufDescTable[frameNo].Set(file, pageNo);
+    bufPool[frameNo]= file.readPage(pageNo);
+    bufDescTable[frameNo].Set(file,pageNo);
+    page=&bufPool[frameNo];
+    hashTable.insert(file,pageNo,frameNo);
+
   }
 }
 
@@ -182,6 +141,7 @@ void BufMgr::allocPage(File& file, PageId& pageNo, Page*& page) {
   }
   catch(BadgerDbException& e){
     std::cerr << e.message();
+    throw e;
   }  
 }
 
