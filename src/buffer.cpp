@@ -47,9 +47,7 @@ void BufMgr::advanceClock() {
  * @param frame frame reference number 
  * @throws BufferExceededExcpetion if all buffer frames are pinned.
  */ 
-void BufMgr::allocBuf(FrameId& frame) {
-<<<<<<< HEAD
-  
+void BufMgr::allocBuf(FrameId& frame) {  
   unsigned int count = 0; // keeps track of the total pages pinned
 
   // use the clock algorithm
@@ -128,17 +126,24 @@ void BufMgr::unPinPage(File& file, const PageId pageNo, const bool dirty) {
     }
   } // if page is not found in any frame, catch exception
   catch (HashNotFoundException &e){
-    std::cerr << "HashNotFoundException in unpinPage()" << "\n";
+    std::cerr << e.message();
   }
 }
 
 // TODO Check if exception handling is needed
 void BufMgr::allocPage(File& file, PageId& pageNo, Page*& page) {
   FrameId frameNo;
-  *page = file.allocatePage();
-  allocBuf(frameNo);
-  hashTable.insert(file, pageNo, frameNo);
-  bufDescTable[frameNo].Set(file, pageNo);
+  try {  
+    allocBuf(frameNo);
+    Page temp = file.allocatePage();
+    page = &(bufPool[frameNo]);
+    *page = temp;
+    hashTable.insert(file, pageNo, frameNo);
+    bufDescTable[frameNo].Set(file, pageNo);
+  }
+  catch(BadgerDbException& e){
+    std::cerr << e.message();
+  }  
 }
 
 void BufMgr::flushFile(File& file) {
@@ -159,7 +164,7 @@ void BufMgr::flushFile(File& file) {
         throw PagePinnedException(file.filename(), bufDescTable[i].pageNo, i);
       }
       //when found, if page is dirty, write to disk and update dirty bit
-      if (bufDescTable[i].dirty == 0)
+      if (bufDescTable[i].dirty != 0)
       {
         bufDescTable[i].file.writePage(bufPool[i]);
         bufDescTable[i].dirty = 0;
