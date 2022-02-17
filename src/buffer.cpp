@@ -70,7 +70,7 @@ void BufMgr::allocBuf(FrameId& frame) {
   }
 
   if(count > numBufs){
-    throw BufferExceededException;
+    throw BufferExceededException();
   }
   //write to disk if the frame is dirty
   if(bufDescTable[clockHand].dirty){
@@ -81,7 +81,7 @@ void BufMgr::allocBuf(FrameId& frame) {
     frame = bufDescTable[clockHand].frameNo;
   }
 
-  hashTable.remove(bufDescTable[clockHand].file, bufDescTable[clockHand].pageNo)
+  hashTable.remove(bufDescTable[clockHand].file, bufDescTable[clockHand].pageNo);
   bufDescTable[clockHand].clear();
   }
   
